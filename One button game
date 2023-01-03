@@ -1,0 +1,98 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GameController : MonoBehaviour
+{
+    // Declare variables for player movement
+    public float speed = 10f;
+    private float moveInput;
+    private bool facingRight = true;
+
+    // Declare variables for player jumping
+    private bool isGrounded;
+    public Transform groundCheck;
+    public float checkRadius;
+    public LayerMask whatIsGround;
+    public int extraJumpsValue;
+    private int extraJumps;
+    public float jumpForce;
+
+    // Declare variables for player attacking
+    public Transform attackPos;
+    public LayerMask whatIsEnemy;
+    public float attackRange;
+    public int damage;
+
+    void Start()
+    {
+        // Initialize extra jumps value
+        extraJumps = extraJumpsValue;
+    }
+
+    void Update()
+    {
+        // Check if player is grounded
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkRadius, whatIsGround);
+
+        // Get player input for horizontal movement
+        moveInput = Input.GetAxis("Horizontal");
+
+        // Move the player
+        transform.position += new Vector3(moveInput * speed * Time.deltaTime, 0f, 0f);
+
+        // Flip the player sprite if necessary
+        if (facingRight == false && moveInput > 0)
+        {
+            Flip();
+        }
+        else if (facingRight == true && moveInput < 0)
+        {
+            Flip();
+        }
+
+        // Check for player jump input
+        if (Input.GetKeyDown(KeyCode.Space) && extraJumps > 0)
+        {
+            // Perform jump
+            GetComponent<Rigidbody2D>().velocity = Vector2.up * jumpForce;
+            extraJumps--;
+        }
+        else if (Input.GetKeyDown(KeyCode.Space) && extraJumps == 0 && isGrounded)
+        {
+            // Perform jump
+            GetComponent<Rigidbody2D>().velocity = Vector2.up * jumpForce;
+        }
+
+        // Check for player attack input
+        if (Input.GetKeyDown(KeyCode.LeftControl))
+        {
+            // Attack
+            Attack();
+        }
+    }
+
+    // Function to flip the player sprite
+    void Flip()
+    {
+        facingRight = !facingRight;
+        Vector3 Scaler = transform.localScale;
+        Scaler.x *= -1;
+        transform.localScale = Scaler;
+    }
+
+    // Function to perform attack
+    void Attack()
+    {
+        // Check for enemies in attack range
+        Collider2D[] enemiesToDamage = Physics2D.OverlapCircleAll(attackPos.position, attackRange, whatIsEnemy);
+        for (int i = 0; i < enemiesToDamage.Length; i++)
+        {
+            // Deal damage to enemies
+            enemiesToDamage[i].GetComponent<EnemyController>().TakeDamage(damage);
+        }
+    }
+
+    // Function to reset extra jumps when player touches ground
+    void OnCollisionEnter2D(Collision2D collision)
+    
